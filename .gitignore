@@ -1,0 +1,21 @@
+# Node/.NET/Qt/通用
+node_modules/
+dist/
+build/
+out/
+*.log
+*.tmp
+*.cache
+.DS_Store
+
+# 配置/密钥
+config/config.yaml
+.env
+*.pfx
+*.keystore
+
+# 安装包/中间产物
+*.exe
+*.msi
+*.zip
+artifacts/

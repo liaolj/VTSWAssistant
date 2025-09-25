@@ -1,0 +1,110 @@
+# Windows 语音 → 结构化文本助手：示例配置（复制为 config.yaml 使用）
+app:
+  language_ui: "zh-CN"
+  autosave_config: true
+  mode: "desktop_assistant"
+
+hotkeys:
+  toggle_recording: "Alt+S"
+  insert_now: "Alt+Enter"
+  undo_last_insert: "Alt+Backspace"
+  switch_template: "Alt+T"
+  pause_resume: "Alt+P"
+
+vad:
+  provider: "silero"
+  threshold: 0.58
+  min_silence_ms: 800
+  max_segment_ms: 5000
+  sample_rate: 16000
+  frame_ms: 20
+
+asr:
+  provider: "doubao"
+  base_url: "wss://asr.vendor.example/stream"
+  api_key: "YOUR_DOUBAO_ASR_KEY"
+  language: "zh-CN"
+  enable_intermediate_results: true
+  punctuation: true
+  profanity_filter: false
+  connect_timeout_ms: 8000
+  keepalive_sec: 20
+  max_reconnect: 3
+  backoff_ms: 800
+
+llm:
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+  api_key: "YOUR_OPENROUTER_API_KEY"
+  model: "openrouter/your-preferred-model"
+  temperature: 0.3
+  top_p: 0.9
+  max_tokens: 800
+  stream: true
+  timeout_ms: 15000
+  alt_models:
+    - model: "openrouter/fallback-1"
+    - model: "openrouter/fallback-2"
+  prompt: |
+    你是“语音转结构化写作助手”。将输入内容整理为：主题、要点（短句分点）、行动项（负责人/截止/下一步）。
+    - 严格基于用户口述，不要杜撰未提及信息。
+    - 不确定内容保留原词并标注（不确定）。
+    - 若口述含指令（如“新段落”“列要点”“改为邮件格式”），请执行并调整格式。
+    - 中文输出，尽量每点不超过20字。
+
+structuring:
+  default_template: "generic"
+  realtime_write: false
+  auto_bullets: true
+  merge_policy: "replace-last-unit"
+  uncertain_tag: "（不确定）"
+
+templates:
+  meeting: |
+    ## 主题
+    ${topic}
+
+    ## 要点
+    - ${point_1}
+    - ${point_2}
+
+    ## 行动项
+    - 负责人：${owner}｜截止：${due}｜下一步：${next}
+  email: |
+    收件人：${to}
+    主题：${subject}
+
+    您好，
+    ${body}
+
+    此致
+    ${signature}
+  task: |
+    标题：${title}
+    描述：${desc}
+    负责人：${owner}
+    截止：${due}
+  generic: |
+    主题：${topic}
+    要点：
+    - ${p1}
+    - ${p2}
+
+insertion:
+  strategy_order: ["sendinput", "uia", "clipboard"]
+  atomic_block_undo: true
+  newline_style: "list"
+  max_block_chars: 1200
+
+privacy:
+  local_only_mode: false
+  redact:
+    emails: true
+    phone_numbers: false
+    id_numbers: false
+  telemetry: false
+
+logging:
+  level: "info"
+  rotate_mb: 10
+  request_sampling: 0.2
