@@ -37,3 +37,29 @@
 
 ## 🤝 贡献
 请阅读 [`CONTRIBUTING.md`](./CONTRIBUTING.md) 与 PR 模板（.github）。安全问题参见 [`SECURITY.md`](./SECURITY.md)。
+
+## 🐍 Python 开发规划
+
+### 为什么采用 Python？
+- Python 作为主要开发语言，将用于核心逻辑实现、脚本自动化和数据处理模块（如 VAD 后处理、ASR 结果解析、LLM 提示工程）。
+- 优势：丰富的生态（如 speech recognition 库）、易读性、跨平台支持，便于扩展语音处理功能。
+- 与现有栈集成：Python 可通过 subprocess 或 API 与现有组件（如 PowerShell 脚本）交互。
+
+### 环境设置
+1. 安装 Python 3.10+（推荐使用 pyenv 或 conda 管理版本）。
+2. 创建虚拟环境：`python -m venv venv` 并激活。
+3. 安装依赖：`pip install -r requirements.txt`（后续创建）。
+
+### 项目结构建议
+- `src/python/`：核心 Python 模块（e.g., vad_processor.py, asr_handler.py, llm_structurer.py）。
+- `tests/python/`：单元测试（使用 pytest）。
+- `scripts/python/`：自动化脚本（e.g., data_collection.py）。
+- `requirements.txt`：列出依赖，如 `silero-vad`, `requests`, `openai`（用于 OpenRouter）。
+
+### 开发流程
+1. 在 `src/python/` 中实现新功能。
+2. 测试：运行 `pytest tests/python/`。
+3. 集成：从主应用调用 Python 脚本（e.g., via `subprocess.run`）。
+4. 贡献：Python 代码遵循 PEP 8 规范，使用 black 格式化，添加类型提示。
+
+更多细节见后续 `docs/Python-Development.md`（待创建）。

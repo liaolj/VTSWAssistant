@@ -19,3 +19,19 @@ config/config.yaml
 *.msi
 *.zip
 artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.pip-install/
+.pip-cache/
