@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 from typing import Iterable, List, Sequence
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -35,13 +39,21 @@ class StructuredLLMFormatter:
 
     def structure(self, transcript: str) -> StructuredSegment:
         cleaned = self._normalise_text(transcript)
+        logger.debug("Structuring transcript (len=%d)", len(cleaned))
         sentences = [s for s in self._split_sentences(cleaned) if s]
         if not sentences:
+            logger.debug("Transcript empty after normalisation; returning uncertain segment")
             return StructuredSegment(topic=self.uncertain_tag, points=(), actions=())
 
         topic = self._extract_topic(sentences)
         points = self._extract_points(sentences, topic)
         actions = self._extract_actions(sentences)
+        logger.debug(
+            "Structured result topic='%s' with %d points and %d actions",
+            topic,
+            len(points),
+            len(actions),
+        )
 
         if not points:
             points = (cleaned or self.uncertain_tag,)
@@ -55,12 +67,14 @@ class StructuredLLMFormatter:
         return text.strip()
 
     def _split_sentences(self, text: str) -> Iterable[str]:
+        logger.debug("Splitting transcript into sentences")
         for sentence in re.split(r"[。！？!?.]+", text):
             trimmed = sentence.strip(" 。,，；;:：")
             if trimmed:
                 yield trimmed
 
     def _extract_topic(self, sentences: Sequence[str]) -> str:
+        logger.debug("Extracting topic from %d sentences", len(sentences))
         for sentence in sentences:
             if "主题" in sentence:
                 return sentence
@@ -68,6 +82,7 @@ class StructuredLLMFormatter:
 
     def _extract_points(self, sentences: Sequence[str], topic: str) -> Sequence[str]:
         points: List[str] = []
+        logger.debug("Extracting points (excluding topic '%s')", topic)
         for sentence in sentences:
             if sentence == topic:
                 continue
@@ -76,6 +91,7 @@ class StructuredLLMFormatter:
 
     def _extract_actions(self, sentences: Sequence[str]) -> Sequence[ActionItem]:
         actions: List[ActionItem] = []
+        logger.debug("Extracting action items")
         for sentence in sentences:
             if "需要" in sentence or "安排" in sentence or "负责" in sentence:
                 owner, description = self._split_owner_and_desc(sentence)
@@ -100,10 +116,12 @@ class StructuredLLMFormatter:
             else:
                 owner = self.uncertain_tag
                 description = sentence
+        logger.debug("Parsed action owner='%s' description='%s'", owner, description)
         return owner, description
 
     def _detect_due(self, sentence: str) -> str | None:
         due_match = re.search(r"(下周[一二三四五六日天]?|明天|后天|今天|本周)", sentence)
         if due_match:
+            logger.debug("Detected due date '%s'", due_match.group(1))
             return due_match.group(1)
         return None

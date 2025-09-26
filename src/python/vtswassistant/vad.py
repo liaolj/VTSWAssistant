@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import List
 
 from .audio import AudioChunk, SpeechSegment
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -27,6 +31,7 @@ class SileroVADSegmenter:
     _segment_index: int = field(init=False, default=0)
 
     def reset(self) -> None:
+        logger.debug("Resetting VAD state")
         self._active = False
         self._segment_start_ms = 0
         self._segment_samples.clear()
@@ -39,6 +44,12 @@ class SileroVADSegmenter:
     def process_chunk(self, chunk: AudioChunk, chunk_index: int) -> List[SpeechSegment]:
         """Consume an audio chunk and return any completed speech segments."""
 
+        logger.debug(
+            "Processing audio chunk %d at %dms (samples=%d)",
+            chunk_index,
+            chunk.timestamp_ms,
+            len(chunk.samples),
+        )
         if not self._active and chunk.has_speech(self.threshold):
             self._start_segment(chunk.timestamp_ms, chunk_index, chunk.transcript_hint)
         elif self._active and (not self._segment_chunks or self._segment_chunks[-1] != chunk_index):
@@ -68,6 +79,8 @@ class SileroVADSegmenter:
             if self._active and self._segment_duration_ms() >= self.max_segment_ms:
                 segments.append(self._close_segment(time_cursor))
 
+        if segments:
+            logger.debug("Chunk %d produced %d segments", chunk_index, len(segments))
         return segments
 
     def flush(self) -> List[SpeechSegment]:
@@ -76,6 +89,7 @@ class SileroVADSegmenter:
         if not self._active:
             return []
 
+        logger.debug("Flushing trailing segment at %dms", self._current_time_ms)
         return [self._close_segment(self._current_time_ms)]
 
     # ------------------------------------------------------------------
@@ -86,6 +100,7 @@ class SileroVADSegmenter:
         self._segment_transcript = [transcript_hint.strip()] if transcript_hint else []
         self._segment_chunks = [chunk_index]
         self._silence_ms = 0
+        logger.debug("Started segment %d at %dms (chunk %d)", self._segment_index, start_ms, chunk_index)
 
     def _close_segment(self, end_ms: int) -> SpeechSegment:
         self._active = False
@@ -103,6 +118,13 @@ class SileroVADSegmenter:
         self._segment_start_ms = end_ms
         self._silence_ms = 0
         self._segment_index += 1
+        logger.debug(
+            "Closed segment %d at %dms (duration=%dms, hint=%d chars)",
+            self._segment_index - 1,
+            end_ms,
+            segment.duration_ms(),
+            len(segment.transcript_hint),
+        )
         return segment
 
     def _segment_duration_ms(self) -> int:

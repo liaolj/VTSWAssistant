@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from .audio import SpeechSegment
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -28,8 +32,20 @@ class DoubaoASRClient:
 
         if segment.transcript_hint:
             text = segment.transcript_hint.strip()
+            logger.debug(
+                "Using transcript hint for segment %s-%sms (%d chars)",
+                segment.start_ms,
+                segment.end_ms,
+                len(text),
+            )
         else:
             text = self._fallback_transcript(segment)
+            logger.debug(
+                "Fallback transcript generated for segment %s-%sms (%d chars)",
+                segment.start_ms,
+                segment.end_ms,
+                len(text),
+            )
         return TranscriptResult(text=text)
 
     def _fallback_transcript(self, segment: SpeechSegment) -> str:

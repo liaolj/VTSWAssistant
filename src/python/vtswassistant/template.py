@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from string import Template
 from typing import Dict, Mapping, Sequence
 
 from .llm import ActionItem, StructuredSegment
 
+
+logger = logging.getLogger(__name__)
 
 class TemplateRenderer:
     """Render structured segments using user-defined templates."""
@@ -25,7 +28,14 @@ class TemplateRenderer:
     def render(self, segment: StructuredSegment, template_name: str = "generic") -> str:
         template = self.templates.get(template_name, self.templates["generic"])
         mapping = self._build_mapping(segment)
-        return template.safe_substitute(mapping).strip()
+        output = template.safe_substitute(mapping).strip()
+        logger.debug(
+            "Rendered template '%s' with topic '%s' (len=%d)",
+            template_name,
+            segment.topic,
+            len(output),
+        )
+        return output
 
     def _build_mapping(self, segment: StructuredSegment) -> Dict[str, str]:
         mapping: Dict[str, str] = {
@@ -41,6 +51,9 @@ class TemplateRenderer:
             mapping[f"owner_{index}"] = action.owner or self.uncertain_tag
             mapping[f"due_{index}"] = action.due or ""
             mapping[f"next_{index}"] = action.description
+        logger.debug(
+            "Built mapping with %d points and %d actions", len(segment.points), len(segment.actions)
+        )
         return mapping
 
     def _format_points(self, points: Sequence[str]) -> str:
