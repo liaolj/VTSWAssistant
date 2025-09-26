@@ -1,0 +1,10 @@
+# Core runtime dependencies
+PyYAML>=6.0
+
+# Speech processing stack (runtime integrations)
+silero-vad>=5.1.0
+requests>=2.31.0
+openai>=1.12.0
+
+# Tooling & tests
+pytest>=7.4
